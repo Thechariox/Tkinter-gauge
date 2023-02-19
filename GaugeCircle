@@ -1,0 +1,103 @@
+import tkinter as tk
+from math import *
+
+
+class GaugeCircle:
+    def __init__(self, parent, canvas_height, canvas_width, radius, angle,
+                 low_r, high_r, nb_main_scale=10, nb_secondary_scale=5, start=90,
+                 title="", title_position=0, unit=""):
+        self.canvas = tk.Canvas(parent, height=canvas_height, width=canvas_width, bd=3,
+                                background="#d9d9d9")
+
+        # gauge position in canvas
+        self.x1 = canvas_width / 2 - radius
+        self.y1 = canvas_height / 2 - radius + (title_position + 10)
+        self.x2 = canvas_width / 2 + radius
+        self.y2 = canvas_height / 2 + radius + (title_position + 10)
+
+        # high and low value of gauge
+        self.low_r = low_r
+        self.high_r = high_r
+
+        self.unit = unit
+
+        # start position of the gauge ( default =90)
+        self.start = start
+
+        # amplitude of the gauge  ( min<0 , max <360)
+        self.angle = angle
+
+        # create circle
+        self.canvas.create_arc(self.x1, self.y1, self.x2, self.y2, start=self.start - self.angle / 2, extent=self.angle,
+                               fill="white", width=1)
+        # add needle/value pointer
+        self.id_needle = self.canvas.create_arc(self.x1, self.y1, self.x2, self.y2, start=self.start, extent=1,
+                                                width=2,
+                                                outline="red")
+        r_center = 5
+        self.canvas.create_arc(self.x1 + (radius - r_center), self.y1 + (radius - r_center),
+                               self.x2 - (radius - r_center), self.y2 - (radius - r_center), extent=359, width=1,
+                               fill="red",
+                               outline="red")
+        # Add some labels
+        self.canvas.create_text(canvas_width / 2, title_position, font="Arial 10 bold", text=title)
+        self.id_text = self.canvas.create_text(canvas_height / 2, canvas_width / 2 + 50 + (title_position + 10),
+                                               font="Arial 10 bold")
+
+        # Create Fig_Recovery_line_pressure_subplot background arc
+        # with Fig_Recovery_line_pressure_subplot number of range lines + labels
+        angle2 = self.angle / nb_main_scale
+        angle3 = angle2 / 5
+        for j in range(0, nb_main_scale + 1):
+            text_numb = round(high_r - j * (high_r - low_r) / nb_main_scale)
+            self.canvas.create_text(
+                canvas_width / 2 + (radius + 15) * cos(((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180),
+                canvas_height / 2 + (radius + 15) * sin(
+                    ((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180) + (title_position + 10),
+                font="Arial 10 bold", text=text_numb)
+
+            self.canvas.create_line(
+                canvas_width / 2 + radius * cos(((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180),
+                canvas_width / 2 + radius * sin(((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180) + (
+                        title_position + 10),
+                canvas_width / 2 + (radius - 10) * cos(
+                    ((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180),
+                canvas_width / 2 + (radius - 10) * sin(
+                    ((90 - (360 - angle) / 2) * pi / 180) - angle2 * j * pi / 180) + (title_position + 10),
+                width=3)
+
+        for j in range(0, nb_main_scale * nb_secondary_scale):
+            self.canvas.create_line(
+                canvas_width / 2 + radius * cos(((90 - (360 - angle) / 2) * pi / 180) - angle3 * j * pi / 180),
+                canvas_width / 2 + radius * sin(((90 - (360 - angle) / 2) * pi / 180) - angle3 * j * pi / 180) + (
+                        title_position + 10),
+                canvas_width / 2 + (radius - 10) * cos(
+                    ((90 - (360 - angle) / 2) * pi / 180) - angle3 * j * pi / 180),
+                canvas_width / 2 + (radius - 10) * sin(
+                    ((90 - (360 - angle) / 2) * pi / 180) - angle3 * j * pi / 180) + (title_position + 10),
+                width=1)
+
+    def update_gauge_circle(self, new_value):
+        if new_value > self.high_r:
+            new_value = self.high_r
+        elif new_value < self.low_r:
+            new_value = self.low_r
+        else:
+            pass
+        self.canvas.itemconfig(self.id_text, text=str(round(new_value, 2)) + self.unit)
+        # Rescale value to angle range (0%=360-angle/2+start, 100%= angle)
+        angle = (360 - self.angle / 2 + self.start) * (self.high_r - new_value) / (
+                self.high_r - self.low_r) + self.angle
+        self.canvas.itemconfig(self.id_needle, start=angle)
+
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    pressure_gauge = GaugeCircle(root, title="Pressure", unit="\nbar", title_position=10,
+                                 canvas_height=250, canvas_width=250, radius=100,
+                                 angle=300,
+                                 low_r=-100, high_r=100)
+    pressure_gauge.canvas.pack()
+    pressure_gauge.update_gauge_circle(20)
+
+    root.mainloop()
