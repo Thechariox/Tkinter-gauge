@@ -1,0 +1,80 @@
+import tkinter as tk
+
+
+class GaugeVertical:
+
+    def __init__(self, parent, canvas_height, canvas_width, gauge_height, gauge_width, low_r,
+                 high_r, title="", title_position=10, nb_main_scale=10, nb_secondary_scale=5):
+        # create the canvas
+        self.canvas = tk.Canvas(parent, height=canvas_height, width=canvas_width,
+                                relief=tk.RIDGE,
+                                borderwidth=2)
+        # for updating the level
+        self.title_position = title_position
+        self.gauge_height = gauge_height
+
+        adjustment_right_side = 10
+        adjustment_top_down_side = 5
+
+        # gauge position in canvas
+        self.x1 = canvas_width / 2 - gauge_width / 2 + adjustment_right_side
+        self.y1 = canvas_height / 2 + gauge_height / 2 + adjustment_top_down_side
+        self.x2 = canvas_width / 2 + gauge_width / 2 + adjustment_right_side
+        self.y2 = canvas_height / 2 - gauge_height / 2 + adjustment_top_down_side
+
+        # high and low value of gauge
+        self.low_r = low_r
+        self.high_r = high_r
+
+        # create rectangle
+        self.canvas.create_rectangle(self.x1, self.y1, self.x2, self.y2, fill="white", width=1)
+
+        # add value pointer
+        self.id_level = self.canvas.create_rectangle(self.x1, self.y1, self.x2, self.y2, width=1, fill="#0A47A4")
+        self.id_level_line = self.canvas.create_line(self.x1, self.y2, self.x2, self.y2, width=2, fill='red')
+
+        # Add some labels
+        self.canvas.create_text(canvas_width / 2 + adjustment_right_side, title_position,
+                                font="Arial 10 bold", text=title)
+
+        # Create main scale bold
+        for i in range(0, nb_main_scale + 1):
+            text_numb = high_r - i * (high_r - low_r) / nb_main_scale
+            self.canvas.create_text(self.x1 - 20, self.y1 - i * (self.y2 - self.y1) / nb_main_scale - gauge_height,
+                                    font="Arial 8 bold", text=text_numb)
+
+            self.canvas.create_line(self.x1, self.y1 - i * (self.y2 - self.y1) / nb_main_scale - gauge_height,
+                                    self.x1 - 5, self.y1 - i * (self.y2 - self.y1) / nb_main_scale - gauge_height,
+                                    width=2)
+            # create secondary scale
+            for j in range(0, nb_main_scale * nb_secondary_scale):
+                self.canvas.create_line(self.x1, self.y1 + j * (self.y2 - self.y1) / (nb_main_scale * 5),
+                                        self.x1 - 2, self.y1 + j * (self.y2 - self.y1) / (nb_main_scale * 5),
+                                        width=1)
+
+        self.id_text = self.canvas.create_text(canvas_width / 2 + adjustment_right_side,
+                                               canvas_height / 2 + gauge_height / 2 + 15,
+                                               font="Arial 10 bold")  # 15 to be under the gauge
+
+    def update_gauge_vertical(self, new_value):
+
+        if new_value > self.high_r:
+            new_value = self.high_r
+        elif new_value < self.low_r:
+            new_value = self.low_r
+        else:
+            pass
+
+        self.canvas.itemconfig(self.id_text, text=str(new_value))
+        # Rescale value
+        level = self.y2 + (1 - (new_value - self.low_r) / (self.high_r - self.low_r)) * (self.y1 - self.y2)
+        self.canvas.coords(self.id_level, self.x1, self.y1, self.x2, level)
+        self.canvas.coords(self.id_level_line, self.x1, level, self.x2, level)
+
+
+if __name__ == '__main__':
+    root = tk.Tk()
+    gauge_l1 = GaugeVertical(root, 220, 150, 180, 60, 0, 100, "Level", 15)
+    gauge_l1.canvas.pack()
+    gauge_l1.update_gauge_vertical(50)
+    root.mainloop()
